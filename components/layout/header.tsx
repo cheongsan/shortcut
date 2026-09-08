@@ -1,5 +1,5 @@
+import { Logo } from "@/components/layout/logo"
 import { SHELL_WIDTH } from "@/lib/styles"
-import { CONFIG } from "@/site.config"
 
 /** The blog's chrome: sticky, translucent, blurred. Width comes from
  *  SHELL_WIDTH, which is clamped to the content rather than the blog's 1120px.
@@ -17,15 +17,7 @@ export function Header() {
       <div
         className={`${SHELL_WIDTH} flex items-center px-6 py-[1.33rem] text-[1.3rem]/[1rem]`}
       >
-        {/* blog Logo geometry: font-weight 900, --nav-logo, -0.75rem pull,
-            0.75rem pad, scale 0.9 on hover. */}
-        <a
-          href={CONFIG.blogUrl}
-          rel="noopener noreferrer"
-          className="press-nav -ml-3 p-3 font-black text-logo hover:bg-pill-hover"
-        >
-          {CONFIG.title}
-        </a>
+        <Logo />
       </div>
     </header>
   )

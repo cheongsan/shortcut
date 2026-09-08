@@ -227,6 +227,64 @@
   @apply motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100;
 }
 
+/** The logo's loading shimmer, lifted verbatim from the live blog
+ *  (cheongsan.do), where the logo carries data-loading and the rule reads:
+ *
+ *    background: linear-gradient(90deg,
+ *      var(--nav-logo) 0%, #7ec8e3 50%, var(--nav-logo) 100%);
+ *
+ *  (its --nav-logo is our --logo)
+ *    background-size: 200% 100%;
+ *    background-clip: text;
+ *    -webkit-text-fill-color: transparent;
+ *    animation: shimmer 1.5s ease-in-out infinite;
+ *
+ *  #7ec8e3 is the sky blue, and it is a literal there too -- it is not one of
+ *  the palette tokens. The gradient is painted onto the glyphs themselves via
+ *  background-clip: text, so -webkit-text-fill-color must go transparent for it
+ *  to show; that pair is why this cannot be expressed as a colour utility.
+ *
+ *  Note the blog's own repo does NOT have this yet -- its committed Logo.tsx is
+ *  just the scale hover. This was read off the deployed site. */
+@utility logo-shimmer {
+  &[data-loading="true"] {
+    /* var(--logo), not the blog's var(--nav-logo): that token is renamed in
+       our palette. Getting this wrong is silent and total -- an undefined var
+       makes the whole shorthand invalid at computed-value time, so
+       background-image falls back to `none` while
+       -webkit-text-fill-color: transparent still applies, and the logo simply
+       vanishes. The currentColor fallback makes that unreachable. */
+    background: linear-gradient(
+      90deg,
+      var(--logo, currentColor) 0%,
+      #7ec8e3 50%,
+      var(--logo, currentColor) 100%
+    );
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  /* An infinite shimmer is exactly what prefers-reduced-motion is for. The
+     gradient still tints the text so the loading state stays visible. */
+  @media (prefers-reduced-motion: reduce) {
+    &[data-loading="true"] {
+      animation: none;
+      background-position: 50% 0;
+    }
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 /* The blog's global `.card`, minus its `height: 100%`. That filled a grid cell
    there; inside our centred flex <main> a percentage height against a
    flex-stretched parent makes the card grow to fill the viewport. */

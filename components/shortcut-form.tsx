@@ -1,8 +1,9 @@
 "use client"
 
 import { ArrowRight, Info, TriangleAlert } from "lucide-react"
-import { useActionState } from "react"
+import { useActionState, useEffect } from "react"
 import { goToShortcut, type ShortcutFormState } from "@/app/actions"
+import { useNavLoading } from "@/components/layout/nav-loading"
 import { ActionButton, KeyInput } from "@/components/ui"
 
 /** The blog has no <form> and no onSubmit anywhere -- its only input is a
@@ -19,6 +20,12 @@ export function ShortcutForm({
     goToShortcut,
     { error: initialError }
   )
+
+  // Mirrored rather than set once on submit: an unknown key returns an error
+  // and stays on this page, so a one-way trigger would leave the logo
+  // shimmering forever.
+  const { setLoading } = useNavLoading()
+  useEffect(() => setLoading(pending), [pending, setLoading])
 
   return (
     <form action={action} className="card flex flex-col gap-2">

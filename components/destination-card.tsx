@@ -1,7 +1,5 @@
-import { ArrowUpRight } from "lucide-react"
-import Link from "next/link"
+import { DestinationActions } from "@/components/destination-actions"
 import { DestinationThumb } from "@/components/destination-thumb"
-import { QuietLinkClasses } from "@/components/ui"
 import type { Shortcut } from "@/lib/types"
 
 /** The confirmation card. Modelled on the blog's feed PostCard: a card
@@ -32,24 +30,7 @@ export function DestinationCard({ shortcut }: { shortcut: Shortcut }) {
         <span className="break-all">{host}</span>
       </p>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        {/* A real <a href>, so it works with no JavaScript and the user can see
-            where it goes before clicking. Same tab: a shortcut going somewhere
-            else is what the user expects. nofollow because this site now points
-            at arbitrary domains. */}
-        <a
-          href={url}
-          rel="noopener noreferrer nofollow"
-          className="press-pill inline-flex items-center justify-center gap-1.5 bg-fg px-4 py-2 text-[0.95rem] font-medium text-page"
-        >
-          이동하기
-          <ArrowUpRight aria-hidden className="size-4" />
-        </a>
-
-        <Link href="/" className={QuietLinkClasses()}>
-          다른 키 입력
-        </Link>
-      </div>
+      <DestinationActions url={url} />
     </article>
   )
 }

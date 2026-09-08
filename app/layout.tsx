@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Header } from "@/components/layout/header"
+import { NavLoadingProvider } from "@/components/layout/nav-loading"
 import { ThemeProvider } from "@/components/layout/theme-provider"
 import { SHELL_WIDTH } from "@/lib/styles"
 import { CONFIG } from "@/site.config"
@@ -47,10 +48,10 @@ export default function RootLayout({
     >
       <body className="flex min-h-svh flex-col">
         <ThemeProvider>
-          <Header />
-          <main className={`${SHELL_WIDTH} flex-1 px-4`}>
-            {children}
-          </main>
+          <NavLoadingProvider>
+            <Header />
+            <main className={`${SHELL_WIDTH} flex-1 px-4`}>{children}</main>
+          </NavLoadingProvider>
         </ThemeProvider>
       </body>
     </html>
