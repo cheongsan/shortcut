@@ -1,0 +1,294 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* next-themes writes class="dark" onto <html>.
+   `:where(.dark, .dark *)` matches the <html> element ITSELF as well as its
+   descendants. shadcn's generated `:is(.dark *)` does NOT match the element it
+   sits on, so `dark:` utilities placed directly on <html> silently do nothing.
+   `:where()` also contributes zero specificity, so source order decides.
+   Must precede any `dark:` usage. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* aria-invalid={false} renders the ATTRIBUTE aria-invalid="false", which a
+   presence-based selector would match. Pin the value. */
+@custom-variant aria-invalid (&[aria-invalid="true"]);
+
+/* ==========================================================================
+   LAYER 1 -- raw palette, ported from cheongsan/blog styles/colour.css.
+   Plain custom properties; nothing here creates a utility class. This is the
+   only layer hand-written CSS may read.
+
+   Values are COMPLETE CSS colors, never bare `H S% L%` channel triplets.
+   Tailwind 4 compiles `bg-panel/50` to
+     color-mix(in oklab, var(--panel) 50%, transparent)
+   which requires a parseable <color> after var() substitution. With a triplet,
+   `bg-panel` works via an hsl() wrapper but `bg-panel/50` silently emits an
+   invalid declaration and the element paints transparent. That is exactly why
+   the old shadcn/Tailwind-3 variable format cannot be reused here (the blog's
+   own `bg-primary/90` was inert for this reason).
+
+   Names are ours, not the blog's: the blog called its card surface `--card`,
+   which collides with shadcn's `--card`, and `--surface` collides with
+   shadcn's `--surface` too. Blog names are noted per line for auditing.
+   ========================================================================== */
+:root {
+  color-scheme: light;
+
+  /* Radix Colors gray v1 -- light. Inlined rather than depending on
+     @radix-ui/colors, whose dark values live on `.dark-theme` (not `.dark`).
+     Nothing bridges that to next-themes, which is why the blog injected the
+     class in a useEffect -- i.e. after first paint. That is its dark-mode
+     FOUC, and it is not fixable by configuration. */
+  --gray-2:  hsl(0 0% 97.3%);
+  --gray-4:  hsl(0 0% 93%);
+  --gray-6:  hsl(0 0% 88.7%);
+  --gray-10: hsl(0 0% 52.3%);
+  --gray-11: hsl(0 0% 43.5%);
+  --gray-12: hsl(0 0% 9%);
+
+  --page:         hsl(210 18% 96%);       /* blog --body                */
+  --chrome:       hsl(210 18% 96% / .8);  /* blog --nav                 */
+  --panel:        hsl(0 0% 100%);         /* blog --card                */
+  --panel-hover:  hsl(210 8% 95%);        /* blog --card-click          */
+  --pill:         hsl(210 18% 96%);       /* blog --card-link           */
+  --pill-hover:   hsl(220 14% 91%);       /* blog --card-link-click     */
+  --action:       hsl(214 16% 91%);       /* blog --card-link-alt       */
+  --action-hover: hsl(220 14% 87%);       /* blog --card-link-alt-click */
+  --logo:         hsl(217 9% 72%);        /* blog --nav-logo            */
+
+  --danger: hsl(358 65% 49%);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --gray-2:  hsl(0 0% 11%);
+  --gray-4:  hsl(0 0% 15.8%);
+  --gray-6:  hsl(0 0% 20.5%);
+  --gray-10: hsl(0 0% 49.4%);
+  --gray-11: hsl(0 0% 62.8%);
+  --gray-12: hsl(0 0% 93%);
+
+  --page:         hsl(240 6% 10%);
+  --chrome:       hsl(240 6% 10% / .87);
+  --panel:        hsl(240 6% 12%);
+  --panel-hover:  hsl(240 8% 16%);
+  --pill:         hsl(240 7% 20%);
+  --pill-hover:   hsl(240 8% 23%);
+
+  /* DELIBERATE DEVIATION from the blog. Its dark --card-link-alt is
+     hsl(240 6% 12%) -- byte-identical to dark --card. That pill only ever sat
+     on --body, never on a card. Our confirm CTA sits on --panel, so a faithful
+     port would be a 1.0:1 contrast rectangle in dark mode. Lifted to the
+     --pill step; the primary CTA additionally uses bg-fg/text-page. */
+  --action:       hsl(240 7% 20%);
+  --action-hover: hsl(240 8% 23%);
+
+  --logo: hsl(240 4% 40%);
+
+  /* 64%, not 59%: at 59% this is 4.30:1 on --panel, which fails AA for the
+     14px warning line it colours. 64% measures 4.97:1 on --panel and 5.24:1 on
+     --page while keeping the same hue. */
+  --danger: hsl(358 75% 64%);
+}
+
+/* ==========================================================================
+   LAYER 2 -- theme tokens.
+
+   `inline` is REQUIRED for anything whose value is a var(). It makes utilities
+   emit the underlying value (`background-color: var(--panel)`), resolving at
+   the element. Plain @theme would emit `--color-panel: var(--panel)` into
+   :root, where the substitution happens -- freezing the light value, so a
+   `.dark` override deeper in the tree becomes invisible. It only appears to
+   work because next-themes puts `.dark` on <html>, which IS :root.
+   Corollary: hand-written CSS must read --panel, never --color-panel.
+
+   No --radius-* overrides on purpose: Tailwind's defaults are already
+   --radius-2xl: 1rem and --radius-xl: 0.75rem, i.e. exactly the blog's card
+   and chip radii. Copying shadcn's calc(var(--radius) * n) block would
+   silently change the geometry we are porting.
+
+   No --text-* overrides either: the blog's type scale IS Tailwind's default.
+     card title  text-lg (1.125rem/1.75rem) -> md:text-xl (1.25rem)
+     meta        text-sm (0.875rem/1.25rem)
+     summary     leading-8 (2rem)
+     error       text-3xl (1.875rem/2.25rem)
+     emoji row   text-6xl (3.75rem/1)
+   Only the action pill's 0.95rem is off-scale -> text-[0.95rem].
+   ========================================================================== */
+@theme inline {
+  --font-sans:
+    var(--font-red-hat-display), var(--font-noto-sans-kr), ui-sans-serif,
+    system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
+    sans-serif;
+
+  /* surfaces */
+  --color-page:         var(--page);
+  --color-chrome:       var(--chrome);
+  --color-panel:        var(--panel);
+  --color-panel-hover:  var(--panel-hover);
+  --color-pill:         var(--pill);
+  --color-pill-hover:   var(--pill-hover);
+  --color-action:       var(--action);
+  --color-action-hover: var(--action-hover);
+  --color-logo:         var(--logo);
+
+  /* Text and lines, mapped by ROLE rather than exposed as a 12-step scale --
+     the blog only ever uses these rungs, and --color-gray-* would sit awkwardly
+     beside Tailwind's built-in gray-50..950.
+
+     fg-subtle (gray-10) is what the blog used for 14px meta text, but it fails
+     WCAG AA in BOTH themes (3.69:1 light on --panel, 4.15:1 dark). Radix's own
+     definition agrees: step 11 is the 4.5:1-guaranteed low-contrast text step,
+     step 10 is for hovered solid backgrounds and borders. So fg-subtle is kept
+     for decorative use >= 3:1 (icon strokes) and every string a user must
+     actually read uses fg-muted (gray-11: 5.03:1 light, 6.44:1 dark). */
+  --color-fg:          var(--gray-12);
+  --color-fg-muted:    var(--gray-11);
+  --color-fg-subtle:   var(--gray-10);
+  --color-line:        var(--gray-6);
+  --color-placeholder: var(--gray-2);        /* image still loading  */
+  --color-placeholder-strong: var(--gray-4); /* no preview available */
+
+  /* shadcn/ui compatibility. Nothing imports these today, but declaring them
+     up front means a later `shadcn add <x>` resolves bg-background /
+     text-muted-foreground / border-input / bg-destructive/90 against OUR
+     palette instead of injecting a second, unrelated neutral scale. That
+     two-systems-that-never-agree split is precisely what went wrong in the
+     blog. Each name is declared exactly once, so the blog's --card collision
+     cannot recur. */
+  --color-background:           var(--page);
+  --color-foreground:           var(--gray-12);
+  --color-card:                 var(--panel);
+  --color-card-foreground:      var(--gray-12);
+  --color-popover:              var(--panel);
+  --color-popover-foreground:   var(--gray-12);
+  --color-primary:              var(--gray-12);
+  --color-primary-foreground:   var(--page);
+  --color-secondary:            var(--pill);
+  --color-secondary-foreground: var(--gray-12);
+  --color-muted:                var(--pill);
+  --color-muted-foreground:     var(--gray-11);
+  --color-accent:               var(--pill-hover);
+  --color-accent-foreground:    var(--gray-12);
+  --color-destructive:          var(--danger);
+  --color-border:               var(--gray-6);
+  --color-input:                var(--gray-6);
+  --color-ring:                 var(--gray-12);
+}
+
+/* ==========================================================================
+   LAYER 3 -- the blog's signature interaction.
+
+   Every clickable card/link shrinks slightly on hover. This is the single most
+   identity-carrying detail of the design:
+     border-radius: 1rem; background: var(--card);
+     transition: scale 300ms cubic-bezier(.4,0,.2,1);
+     &:hover { scale: .97; background: var(--card-click) }
+
+   @utility (not a plain class, not @layer components) so these land in the
+   utilities layer and compose correctly with variants -- `hover:scale-90` on
+   the logo then overrides by source order rather than by a specificity war.
+
+   Two things this fixes for free versus the blog:
+   - Tailwind 4 compiles `hover:` to @media (hover: hover). The blog's bare
+     `&:hover` leaves a card shrunk after a phone tap until you tap elsewhere.
+     `active:` gives touch users the press feedback they'd otherwise lose.
+   - motion-reduce: the blog shrank unconditionally.
+
+   scale-[0.97] rather than scale-97: the bracket form emits the two-component
+   `scale: 0.97` the blog wrote, where scale-97 emits a three-axis
+   `97% 97% 97%` -- a 3D transform that can promote the element to its own
+   compositing layer and change text rasterization mid-transition.
+
+   Tailwind's default --ease-in-out is already cubic-bezier(.4, 0, .2, 1).
+   transition-[scale] is narrow on purpose: the blog does NOT fade the
+   background, and the instant colour snap under a 300ms shrink is part of the
+   feel. Do not "fix" that.
+   ========================================================================== */
+@utility press-card {
+  @apply rounded-2xl bg-panel transition-[scale] duration-300 ease-in-out;
+  @apply hover:scale-[0.97] hover:bg-panel-hover active:scale-[0.97];
+  @apply motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100;
+}
+
+/* Chips, pills and nav items: same motion, 0.75rem radius, colour handled at
+   the call site because the blog uses three different pill palettes. */
+@utility press-pill {
+  @apply rounded-xl transition-[scale] duration-300 ease-in-out;
+  @apply hover:scale-[0.97] active:scale-[0.97];
+  @apply motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100;
+}
+
+/* The header logo and nav chips shrink harder (blog: scale 0.9). */
+@utility press-nav {
+  @apply rounded-xl transition-[scale] duration-300 ease-in-out;
+  @apply hover:scale-[0.9] active:scale-[0.9];
+  @apply motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100;
+}
+
+/* The blog's global `.card`, minus its `height: 100%`. That filled a grid cell
+   there; inside our centred flex <main> a percentage height against a
+   flex-stretched parent makes the card grow to fill the viewport. */
+@utility card {
+  @apply w-full rounded-2xl bg-panel p-4;
+}
+
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+@layer base {
+  /* Tailwind 4 defaults border-color to currentColor. Restore a hairline. */
+  *,
+  ::before,
+  ::after {
+    @apply border-line;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* No global `scroll-behavior: smooth`: Next 16 no longer overrides it
+       during navigation, which would then require data-scroll-behavior. */
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    @apply bg-page text-fg font-sans antialiased;
+    font-weight: 500;          /* the blog's body default */
+    word-break: keep-all;      /* Korean: never break inside a word */
+    overflow-wrap: break-word; /* but do break an unbreakable URL */
+  }
+
+  /* Tailwind 4 gives buttons cursor: default. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  label[for] {
+    @apply cursor-pointer;
+  }
+
+  /* Tailwind 4 renders placeholders as currentColor at 50%. Use the token. */
+  ::placeholder {
+    @apply text-fg-subtle;
+    opacity: 1;
+  }
+
+  /* ONE focus ring, and nothing anywhere sets outline-none, so it is never
+     fighting a reset (the blog's `outline-style: none` + `focus:shadow` was
+     both too weak and, being a box-shadow, invisible in forced-colors mode --
+     where outline is preserved and recoloured by the OS).
+     --gray-12 is the body ink: ~17:1 light, ~15:1 dark. outline-offset puts it
+     outside the element so overflow-hidden cannot clip it, and outlines follow
+     the element's own border-radius. */
+  :focus-visible {
+    outline: 2px solid var(--gray-12);
+    outline-offset: 2px;
+  }
+
+  hr {
+    @apply border-line;
+  }
+
+  ::selection {
+    @apply bg-fg text-page;
+  }
+}
