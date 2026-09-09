@@ -233,21 +233,19 @@ export const CONFIG = {
    npm install
    ```
 
-2. 실행
-
-   ```bash
-   npm run dev    # http://localhost:3000
-   ```
-
-   `NOTION_TOKEN` 이 없어도 **예시 데이터로 동작합니다.** 입력 화면·확인 카드·이미지 없는
-   경우·다크 모드를 그대로 볼 수 있습니다.
-
-3. (선택) 실제 Notion에 연결해 보기
+2. Notion 값 채우기
 
    ```bash
    cp .env.example .env.local     # 파일을 열어 값 채우기
-   npm run notion:datasource      # NOTION_DATA_SOURCE_ID 확인
-   npm run dev
+   ```
+
+   [3번](#3-notion-연결하기)에서 챙긴 `NOTION_TOKEN` 과 `NOTION_DATABASE_ID` 를 넣습니다.
+   **값이 없으면 실행되지 않습니다.**
+
+3. 실행
+
+   ```bash
+   npm run dev    # http://localhost:3000
    ```
 
 > `nvm` 을 찾을 수 없다면 `export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh"` 를 먼저

@@ -1,8 +1,7 @@
 import "server-only"
 import { unstable_cache } from "next/cache"
-import { FIXTURES } from "./fixtures"
 import { normalizeKey } from "./key"
-import { notionConfigured, loadRowsFromNotion } from "./notion"
+import { MissingNotionConfigError, loadRowsFromNotion } from "./notion"
 import type { Shortcut, ShortcutRow } from "./types"
 
 /** ONE cache tag for the whole table, not one per key.
@@ -27,16 +26,11 @@ export const SHORTCUTS_TAG = "shortcuts"
  *  also means a Notion outage stays invisible while stale data is served. */
 const loadSnapshot = unstable_cache(
   async (): Promise<ShortcutRow[]> => {
-    const rows = notionConfigured() ? await loadRowsFromNotion() : fixtureRows()
-    return dedupe(rows)
+    return dedupe(await loadRowsFromNotion())
   },
   ["shortcuts-snapshot"],
   { revalidate: 300, tags: [SHORTCUTS_TAG] }
 )
-
-function fixtureRows(): ShortcutRow[] {
-  return Object.values(FIXTURES).map((s) => ({ ...s, aliases: [] }))
-}
 
 /** Duplicate keys are detected once, at load, rather than being resolved
  *  arbitrarily per request. Notion happily allows two rows titled `docs`, and
@@ -70,9 +64,16 @@ export async function getShortcut(key: string): Promise<Shortcut | null> {
   return aliased ? strip(aliased) : null
 }
 
-/** Keys to prerender. Failures are swallowed on purpose: a Notion outage or a
- *  missing build-time env var must degrade to on-demand ISR, not fail the
- *  deploy. */
+/** Keys to prerender.
+ *
+ *  A MISSING CONFIGURATION rethrows, which fails the build. That is the point:
+ *  a deploy without NOTION_TOKEN would otherwise ship a site where every
+ *  shortcut is broken, and finding out from a 404 is worse than finding out
+ *  from a red build.
+ *
+ *  A Notion API failure is swallowed instead -- Notion being briefly
+ *  unreachable while a build runs is not a reason to fail the deploy, and the
+ *  route renders on demand anyway. */
 export async function listAllKeys(): Promise<string[]> {
   try {
     const rows = await loadSnapshot()
@@ -86,6 +87,7 @@ export async function listAllKeys(): Promise<string[]> {
     }
     return [...keys]
   } catch (error) {
+    if (error instanceof MissingNotionConfigError) throw error
     console.warn(
       "[shortcut] could not list keys; falling back to on-demand rendering",
       error

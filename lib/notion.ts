@@ -29,20 +29,43 @@ function env(name: string): string | undefined {
   return value && value.trim() ? value.trim() : undefined
 }
 
-export function notionConfigured(): boolean {
-  return Boolean(
-    env("NOTION_TOKEN") &&
-      (env("NOTION_DATA_SOURCE_ID") || env("NOTION_DATABASE_ID"))
-  )
+/** Thrown when the Notion environment is not configured.
+ *
+ *  Distinct from an API failure on purpose: a missing variable is a
+ *  misconfiguration that must surface immediately, while Notion being briefly
+ *  unreachable should not take a deploy down. Callers branch on this. */
+export class MissingNotionConfigError extends Error {
+  constructor(missing: string[]) {
+    super(
+      `Notion is not configured: ${missing.join(", ")} 가 필요합니다. ` +
+        `README의 "3. Notion 연결하기" 와 "4. 환경변수" 를 확인해 주세요.`
+    )
+    this.name = "MissingNotionConfigError"
+  }
 }
 
-/** Created lazily, inside a function rather than at module scope, so
- *  `next build` succeeds with no NOTION_TOKEN. Otherwise one missing env var
- *  turns a graceful runtime degradation into a broken build. */
+/** Returns the token, or throws with the exact list of what is missing.
+ *
+ *  There is no fallback to sample data. Serving fake shortcuts would hide a
+ *  broken deploy behind a site that looks like it works. */
+function requireConfig(): string {
+  const missing: string[] = []
+  const token = env("NOTION_TOKEN")
+  if (!token) missing.push("NOTION_TOKEN")
+  if (!env("NOTION_DATA_SOURCE_ID") && !env("NOTION_DATABASE_ID")) {
+    missing.push("NOTION_DATABASE_ID (또는 NOTION_DATA_SOURCE_ID)")
+  }
+  if (missing.length > 0 || !token) throw new MissingNotionConfigError(missing)
+  return token
+}
+
 let client: Client | undefined
 function getClient(): Client {
+  // Created lazily, inside a function rather than at module scope, so importing
+  // this module never throws -- the failure surfaces where a lookup is actually
+  // attempted, with a message naming the missing variable.
   client ??= new Client({
-    auth: env("NOTION_TOKEN"),
+    auth: requireConfig(),
     notionVersion: NOTION_VERSION,
     timeoutMs: 8_000,
   })
@@ -169,6 +192,11 @@ async function withRetry<T>(operation: () => Promise<T>): Promise<T> {
   try {
     return await operation()
   } catch (error) {
+    // Not a Notion failure and not retryable: the message already says exactly
+    // which variable is missing, so logging it as an "unexpected Notion
+    // failure" would only misdirect whoever reads the build output.
+    if (error instanceof MissingNotionConfigError) throw error
+
     const retryAfter = retryDelayMs(error)
     if (retryAfter === null) {
       logNotionError(error)
