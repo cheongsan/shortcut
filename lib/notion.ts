@@ -38,7 +38,7 @@ export class MissingNotionConfigError extends Error {
   constructor(missing: string[]) {
     super(
       `Notion is not configured: ${missing.join(", ")} 가 필요합니다. ` +
-        `README의 "3. Notion 연결하기" 와 "4. 환경변수" 를 확인해 주세요.`
+        `README의 "2. Notion 연결하기" 와 "3. 환경변수" 를 확인해 주세요.`
     )
     this.name = "MissingNotionConfigError"
   }
