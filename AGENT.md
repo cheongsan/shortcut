@@ -9,22 +9,32 @@
 
 ## 개발 환경
 
-**Node 22 필수.** `next@16`은 `>= 20.9.0`을 요구하고 `package.json`의 `engines`가 `22.x`로
-고정돼 있어, 낮은 버전에서는 `npm install`이 바로 실패합니다.
+**Node 24 필수.** `package.json`의 `engines`가 `24.x`로 고정돼 있어 다른 메이저에서는
+`npm install`이 바로 실패합니다. Vercel의 현재 기본값도 24.x입니다 (20.x·22.x도 선택 가능).
 
 ```bash
-export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use   # .nvmrc = 22.14.0
+export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use   # .nvmrc = 24.18.0
 npm install
 ```
 
 > 이 환경의 기본 `node`는 `/usr/local/bin/node`(v16)입니다. nvm이 셸에 자동 로드되지 않으므로
-> **위처럼 source한 뒤에야** v22가 잡힙니다. `npm`·`npx`·`next` 모두 그 셸에서 실행해야 합니다.
+> **위처럼 source한 뒤에야** v24가 잡힙니다. `npm`·`npx`·`next` 모두 그 셸에서 실행해야 합니다.
+
+Node 24로 올리면서 함께 정리한 것:
+
+- **테스트에서 `--experimental-strip-types`를 뺐다.** Node 23부터 `.ts` 실행이 기본이라
+  플래그가 불필요하다. Node 22 이하로 되돌리려면 이 플래그를 다시 붙여야 한다.
+- **`package.json`에 `"type": "module"`을 넣었다.** 없으면 `.ts` 테스트를 돌릴 때마다
+  `MODULE_TYPELESS_PACKAGE_JSON` 경고가 나온다. 추적 중인 스크립트가 모두 `.mjs`라
+  의미가 바뀌는 파일은 없다.
+- npm 11은 postinstall 스크립트를 기본 차단한다. 설치 시
+  `unrs-resolver`(eslint 의존성) 경고가 나오지만 lint는 정상 동작하므로 승인하지 않아도 된다.
 
 ## 명령
 
 ```bash
 npm run dev        # http://localhost:3000
-npm test           # 단위 테스트 (node --experimental-strip-types)
+npm test           # 단위 테스트 (Node 24는 .ts 실행이 기본)
 npm run typecheck  # next typegen && tsc --noEmit
 npm run lint       # eslint . (next lint 는 Next 16에서 제거됨)
 npm run build

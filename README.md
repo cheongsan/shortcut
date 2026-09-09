@@ -121,7 +121,7 @@ Notion에 적어 둔 주소를 짧은 키로 열어주는 바로가기 서비스
 1. Vercel 대시보드 → **Add New** → **Project** → 이 저장소를 **Import** 합니다.
 
 2. 빌드 설정은 **모두 기본값 그대로** 둡니다.
-   Next.js로 자동 인식되고, Node 버전도 자동으로 22.x가 선택됩니다.
+   Next.js로 자동 인식되고, Node 버전도 자동으로 24.x가 선택됩니다 (Vercel의 현재 기본값).
 
 3. **Environment Variables** 에 [4번](#4-환경변수)의 값을 넣습니다.
    **`Production` · `Preview` · `Development` 세 곳 모두**에 넣어 주세요.
@@ -224,12 +224,12 @@ export const CONFIG = {
 
 배포에는 필요하지 않습니다. 미리 확인해 보고 싶을 때만 보시면 됩니다.
 
-**Node 22** 가 필요합니다.
+**Node 24** 가 필요합니다.
 
 1. 준비
 
    ```bash
-   nvm use        # .nvmrc = 22.14.0
+   nvm use        # .nvmrc = 24.18.0
    npm install
    ```
 
