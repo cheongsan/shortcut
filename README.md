@@ -145,7 +145,7 @@ Notion에 적어 둔 주소를 짧은 키로 열어주는 바로가기 서비스
 
 정확한 원인은 Vercel의 **Deployments** → 해당 배포 → **Runtime Logs** 에 찍힙니다.
 
-| 로그에 보이는 말 | 뜻 | 할 일 |
+| 로그 | 원인 | 조치방법 |
 |---|---|---|
 | `object_not_found` | 표에 인테그레이션이 연결되지 않음 | `⋯` → Connections 에서 추가 |
 | `NOTION_TOKEN is invalid` | 토큰이 틀림 | 시크릿을 다시 복사해 넣기 |
